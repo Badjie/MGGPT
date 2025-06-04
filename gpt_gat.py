@@ -20,7 +20,7 @@ import os
 
 
 class MGGPT(nn.Module):
-    def __init__(self, input_dim, hidden_dim, num_heads=1, dropout=0.1):
+    def __init__(self, input_dim, hidden_dim, num_heads=2, dropout=0.1):
         super(MGGPT, self).__init__()
         self.hidden_dim = hidden_dim
 
@@ -148,7 +148,7 @@ def create_edge_labels(G, labels, edge_index, node_to_idx):
         src_label = 1 if labels[src_node][0] == 'collection_irregular' else 0
         dst_label = 1 if labels[dst_node][0] == 'collection_irregular' else 0
         
-        # Edge is labeled as abnormal if either source or destination is abnormal
+        # Edge is labeled as irregular if either source or destination is irregular
         edge_labels.append(float(src_label or dst_label))
     
     return torch.tensor(edge_labels, dtype=torch.float)
@@ -189,7 +189,7 @@ def label_nodes(fraud_scores, antifraud_scores, fraud_threshold=0.01, antifraud_
         labels[node] = (collection_label, pay_label)
     return labels
     
-def create_reachability_subgraph(G, node, max_depth=2):
+def create_reachability_subgraph(G, node, max_depth=1):
     reachability_subgraph = nx.DiGraph()
     reachability_subgraph.add_node(node)
     current_level = {node}
@@ -204,7 +204,7 @@ def create_reachability_subgraph(G, node, max_depth=2):
     return reachability_subgraph
 
 
-def label_edges(G, max_depth=2):
+def label_edges(G, max_depth=1):
     reachability_networks = defaultdict(nx.DiGraph)
     for node in G.nodes:
         reachability_networks[node] = create_reachability_subgraph(G, node, max_depth)
@@ -225,7 +225,7 @@ def common_eval(reachability_networks):
     return neighbors
 
 def extract_features(G, node):
-    reachability_networks = label_edges(G, max_depth=2)
+    reachability_networks = label_edges(G, max_depth=1)
     neighbors = common_eval(reachability_networks)
     St1 = count_edges(reachability_networks[node], label='collection_regular')
     St2 = count_edges(reachability_networks[node], label='collection_irregular')
@@ -259,7 +259,7 @@ def create_data_list(G_list, labels_list):
     
     return data_list
     
-def train_model(model, train_loader, epochs=10, learning_rate=0.01):
+def train_model(model, train_loader, epochs=200, learning_rate=0.0003):
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
     model.train()
     all_edge_embeddings = []
@@ -373,7 +373,7 @@ def main():
     data = data.sort_values(by='timestamp')
 
     # Split data into 31-day time slices
-    data['time_slice'] = (data['timestamp'] - data['timestamp'].min()).dt.days // 31
+    data['time_slice'] = (data['timestamp'] - data['timestamp'].min()).dt.days // 30
 
     # Combine the last few sparse time slices into a single time slice
     threshold = 5  # Combine slices with fewer than 20 entries
