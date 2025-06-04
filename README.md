@@ -1,5 +1,5 @@
 # MGGPT
-MGGPT framework for framework for fraud detection in Cryptocurrency networks
+MGGPT framework for fraud detection in Cryptocurrency networks
 
 Libraries
 import pandas as pd
