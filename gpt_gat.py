@@ -26,7 +26,7 @@ class MGGPT(nn.Module):
 
         # GNN layers
         self.gat_input = GATConv(input_dim, hidden_dim, heads=num_heads, dropout=dropout)
-        self.gat_hidden = GATConv(hidden_dim * num_heads, hidden_dim, heads=1, dropout=dropout)
+        self.gat_hidden = GATConv(hidden_dim * num_heads, hidden_dim, heads=2, dropout=dropout)
 
         # GPT-2 configuration
         self.gpt_config = GPT2Config(
